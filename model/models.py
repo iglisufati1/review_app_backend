@@ -1,18 +1,19 @@
+from io import BytesIO
+
 import qrcode
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.files import File
 from django.db import models
 from django.utils import timezone
-from io import BytesIO
-from django.core.files import File
 
 
 # Create your models here.
 
-class RAModel(models.Model):
+class SIModel(models.Model):
     class Meta:
-        app_label = 'ra_model'
+        app_label = 'si_model'
         abstract = True
 
     date_created = models.DateTimeField('Data e krijimit', auto_now_add=True)
@@ -22,11 +23,11 @@ class RAModel(models.Model):
         return self.id
 
 
-class Business(RAModel):
+class Business(SIModel):
     class Meta:
         verbose_name = 'Biznesi'
         verbose_name_plural = 'Bizneset'
-        db_table = 'ra_business'
+        db_table = 'si_business'
         ordering = ['name']
 
     name = models.CharField('Emri i biznesit', max_length=150)
@@ -38,40 +39,40 @@ class Business(RAModel):
 
 
 class CustomUserManager(BaseUserManager):
-    def _create_user(self, email, password, **extra_fields):
+    def _create_user(self, email, password, **extsi_fields):
         '''
         Creates and saves a User with the given username and password.
         '''
-        user = self.model(email=email, **extra_fields)
+        user = self.model(email=email, **extsi_fields)
         user.email = email
         user.set_password(password)
         user.save()
         return user
 
-    def create_user(self, email, password, **extra_fields):
+    def create_user(self, email, password, **extsi_fields):
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(email=email, **extsi_fields)
         user.email = email
         user.set_password(password)
         user.save()
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
-        if extra_fields.get('is_staff') is not True:
+    def create_superuser(self, email, password, **extsi_fields):
+        extsi_fields.setdefault('is_staff', True)
+        extsi_fields.setdefault('is_superuser', True)
+        extsi_fields.setdefault('is_active', True)
+        if extsi_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
+        if extsi_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email, password, **extsi_fields)
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Administratori'
         verbose_name_plural = 'Administratorët'
-        db_table = 'ra_admin'
+        db_table = 'si_admin'
 
     email = models.EmailField(max_length=254, unique=True)
     password = models.CharField(max_length=100)
@@ -127,7 +128,7 @@ class ACActionLogger(models.Model):
     class Meta:
         verbose_name = 'Action Logger'
         verbose_name_plural = 'Action Loggers'
-        db_table = 'action_logger'
+        db_table = 'si_action_logger'
 
     action_time = models.DateTimeField('Action time', default=timezone.now, editable=False)
     user = models.ForeignKey(CustomUser, models.CASCADE, verbose_name='CustomUser', null=True)
@@ -140,11 +141,11 @@ class ACActionLogger(models.Model):
     objects = ACLogEntryManager()
 
 
-class Waiter(RAModel):
+class Waiter(SIModel):
     class Meta:
         verbose_name = 'Kamarieri'
         verbose_name_plural = 'Kamarierët'
-        db_table = 'ra_waiter'
+        db_table = 'si_waiter'
         ordering = ['first_name']
 
     first_name = models.CharField('Emri', max_length=50)
@@ -175,11 +176,11 @@ class Waiter(RAModel):
         super().save(*args, **kwargs)
 
 
-class WaiterFeedback(RAModel):
+class WaiterFeedback(SIModel):
     class Meta:
         verbose_name = 'Vlerësimi për kamarierin'
         verbose_name_plural = 'Vlerësimet për kamarierin'
-        db_table = 'ra_waiter_feedback'
+        db_table = 'si_waiter_feedback'
         ordering = ['rating']
 
     rating = models.PositiveIntegerField('Vlerësimi')
@@ -189,18 +190,53 @@ class WaiterFeedback(RAModel):
         return str(self.rating)
 
 
-class ProductFeedback(RAModel):
+class Menu(SIModel):
     class Meta:
-        verbose_name = 'Vlerësimi për produktin'
-        verbose_name_plural = 'Vlerësimet për produktin'
-        db_table = 'ra_product_feedback'
-        ordering = ['rating']
+        verbose_name = 'Menuja'
+        verbose_name_plural = 'Menutë'
+        db_table = 'si_menu'
 
-    PRODUCT_TYPES = (('F', 'Food'), ('B', 'Beverage'))
-    product_type = models.CharField(choices=PRODUCT_TYPES, max_length=10)
-    rating = models.PositiveIntegerField('Vlerësimi')
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_feedbacks', null=True,
-                                 blank=True)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='menus')
+
+    def __str__(self):
+        return str(f'{self.business.name} - Menuja')
+
+
+class Category(SIModel):
+    class Meta:
+        verbose_name = 'Kategoria'
+        verbose_name_plural = 'Kategortë'
+        db_table = 'si_category'
+
+    name = models.CharField(max_length=20)
+    menu = models.ForeignKey(Menu, on_delete=models.CASCADE, related_name='categories')
+
+    def __str__(self):
+        return str(f'{self.menu.business.name} - {self.name}')
+
+
+class Products(SIModel):
+    class Meta:
+        verbose_name = 'Produkti'
+        verbose_name_plural = 'Produktet'
+        db_table = 'si_product'
+
+    name = models.CharField(max_length=20)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+
+    def __str__(self):
+        return str(self.name)
+
+
+class BusinessFeedback(SIModel):
+    class Meta:
+        verbose_name = 'Vlerësimi për biznesin'
+        verbose_name_plural = 'Vlerësimet për biznesin'
+        db_table = 'si_business_feedback'
+
+    rating = models.IntegerField()
+    category_rating = models.ForeignKey(Category, related_name='category_ratings', null=True, blank=True, on_delete=models.CASCADE)
+    product_rating = models.ForeignKey(Products, related_name='product_ratings', null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.rating)
