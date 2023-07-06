@@ -1,12 +1,11 @@
+import qrcode
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
-from django.db import models
-import os
-from django.conf import settings
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
-from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils import timezone
+from io import BytesIO
+from django.core.files import File
 
 
 # Create your models here.
@@ -69,6 +68,11 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    class Meta:
+        verbose_name = 'Administratori'
+        verbose_name_plural = 'Administratorët'
+        db_table = 'ra_admin'
+
     email = models.EmailField(max_length=254, unique=True)
     password = models.CharField(max_length=100)
     first_name = models.CharField(max_length=50)
@@ -76,7 +80,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_admins', null=True,
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='admins', null=True,
                                  blank=True)
 
     groups = models.ManyToManyField(
@@ -145,24 +149,58 @@ class Waiter(RAModel):
 
     first_name = models.CharField('Emri', max_length=50)
     last_name = models.CharField('Mbiemri', max_length=50)
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_waiters', null=True,
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='waiters', null=True,
                                  blank=True)
+    # Generate a unique QR code for each waiter
+    qr_code = models.ImageField(upload_to='qr_codes/', null=True, blank=True)
+
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
+    def save(self, *args, **kwargs):
+        # Generate QR code and save image
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(f"Waiter ID: {self.id}")
+        qr.make(fit=True)
 
-class Feedback(RAModel):
+        qr_image = qr.make_image(fill='black', back_color='white')
+
+        # Create a BytesIO object to save the image
+        qr_image_io = BytesIO()
+        qr_image.save(qr_image_io, format='PNG')
+
+        # Save the image to the qr_code field
+        self.qr_code.save(f'qr_code_{self.first_name}_{self.last_name}_{self.id}.png', File(qr_image_io), save=False)
+
+        super().save(*args, **kwargs)
+
+
+class WaiterFeedback(RAModel):
     class Meta:
-        verbose_name = 'Vlerësimi'
-        verbose_name_plural = 'Vlerësimet'
-        db_table = 'ra_feedback'
+        verbose_name = 'Vlerësimi për kamarierin'
+        verbose_name_plural = 'Vlerësimet për kamarierin'
+        db_table = 'ra_waiter_feedback'
         ordering = ['rating']
 
     rating = models.PositiveIntegerField('Vlerësimi')
-    waiter = models.ForeignKey(Waiter, on_delete=models.CASCADE, related_name='feedbacks', null=True, blank=True)
+    waiter = models.ForeignKey(Waiter, on_delete=models.CASCADE, related_name='waiter_feedbacks', null=True, blank=True)
 
     def __str__(self):
         return str(self.rating)
 
 
+class ProductFeedback(RAModel):
+    class Meta:
+        verbose_name = 'Vlerësimi për produktin'
+        verbose_name_plural = 'Vlerësimet për produktin'
+        db_table = 'ra_product_feedback'
+        ordering = ['rating']
 
+    PRODUCT_TYPES = (('F', 'Food'), ('B', 'Beverage'))
+    product_type = models.CharField(choices=PRODUCT_TYPES, max_length=10)
+    rating = models.PositiveIntegerField('Vlerësimi')
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='business_feedbacks', null=True,
+                                 blank=True)
+
+    def __str__(self):
+        return str(self.rating)
