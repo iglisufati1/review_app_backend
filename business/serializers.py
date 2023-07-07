@@ -1,45 +1,35 @@
-from rest_framework import serializers
-from model.models import CustomUser, WaiterFeedback, Menu, Category, Products, BusinessFeedback
 from common.global_serializers.serializers import UserSerializer
-from django.db.models import Avg, Case, When
+from django.db.models import Avg
+from model.models import Category, Product, CategoryRating, ProductRating
+from rest_framework import serializers
+from waiter.serializers import WaiterReadSerializer
 
 
-class WaiterFeedBackReadSerializer(serializers.Serializer):
+class ProductRatingReadSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     rating = serializers.IntegerField()
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
 
-class ProductFeedBackReadSerializer(serializers.Serializer):
+class CategoryRatingSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    product_type = serializers.CharField()
     rating = serializers.IntegerField()
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
-
-class WaiterReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-    waiter_feedbacks = WaiterFeedBackReadSerializer(many=True, read_only=True)
-    average_feedback = serializers.SerializerMethodField()
-
-    def get_average_feedback(self, obj):
-        average_feedback = WaiterFeedback.objects.filter(waiter=obj.id).aggregate(Avg('rating'))
-        return average_feedback.get('rating__avg', None)
-
-class BusinessFeedbackSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    category_rating = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    product_rating = serializers.PrimaryKeyRelatedField(queryset=Products.objects.all())
 
 class ProductReadSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField()
-    product_rating = serializers.SerializerMethodField()
+    product_ratings = serializers.SerializerMethodField()
+    product_avg_rating = serializers.SerializerMethodField()
 
-    def get_product_rating(self, obj):
-        product_rating = BusinessFeedback.objects.select_related('product_rating').all()
-        return BusinessFeedbackSerializer(product_rating, many=True).data
+    def get_product_ratings(self, obj):
+        product_ratings = ProductRating.objects.select_related('product').filter(product_id=obj.id)
+        return ProductRatingReadSerializer(product_ratings, many=True).data
 
+    def get_product_avg_rating(self, obj):
+        product_avg_rating = ProductRating.objects.filter(product_id=obj.id).aggregate(Avg('rating'))
+        return product_avg_rating.get('rating__avg', None)
 
 
 class CategoryReadSerializer(serializers.Serializer):
@@ -47,14 +37,19 @@ class CategoryReadSerializer(serializers.Serializer):
     name = serializers.CharField()
     products = serializers.SerializerMethodField()
     category_ratings = serializers.SerializerMethodField()
+    category_avg_rating = serializers.SerializerMethodField()
 
     def get_products(self, obj):
-        products = Products.objects.select_related('category').all()
+        products = Product.objects.select_related('category').all()
         return ProductReadSerializer(products, many=True).data
 
     def get_category_ratings(self, obj):
-        category_ratings = BusinessFeedback.objects.select_related('category_rating').all()
-        return BusinessFeedbackSerializer(category_ratings, many=True).data
+        category_ratings = CategoryRating.objects.select_related('category').filter(category_id=obj.id)
+        return CategoryRatingSerializer(category_ratings, many=True).data
+
+    def get_category_avg_rating(self, obj):
+        category_avg_rating = CategoryRating.objects.filter(category_id=obj.id).aggregate(Avg('rating'))
+        return category_avg_rating.get('rating__avg', None)
 
 
 class MenuReadSerializer(serializers.Serializer):
@@ -73,7 +68,7 @@ class BusinessReadSerializer(serializers.Serializer):
     nipt = serializers.CharField()
     admins = UserSerializer(many=True, read_only=True)
     waiters = WaiterReadSerializer(many=True, read_only=True)
-    business_feedbacks = ProductFeedBackReadSerializer(many=True, read_only=True)
+    business_ratings = ProductRatingReadSerializer(many=True, read_only=True)
     menus = MenuReadSerializer()
     # average_food_rating = serializers.SerializerMethodField()
     # average_beverage_rating = serializers.SerializerMethodField()

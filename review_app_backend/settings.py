@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'model',
     'common',
     'business',
+    'waiter',
 ]
 
 MIDDLEWARE = [

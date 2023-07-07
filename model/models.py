@@ -176,15 +176,15 @@ class Waiter(SIModel):
         super().save(*args, **kwargs)
 
 
-class WaiterFeedback(SIModel):
+class WaiterRating(SIModel):
     class Meta:
         verbose_name = 'Vlerësimi për kamarierin'
         verbose_name_plural = 'Vlerësimet për kamarierin'
-        db_table = 'si_waiter_feedback'
+        db_table = 'si_waiter_rating'
         ordering = ['rating']
 
     rating = models.PositiveIntegerField('Vlerësimi')
-    waiter = models.ForeignKey(Waiter, on_delete=models.CASCADE, related_name='waiter_feedbacks', null=True, blank=True)
+    waiter = models.ForeignKey(Waiter, on_delete=models.CASCADE, related_name='waiter_ratings', null=True, blank=True)
 
     def __str__(self):
         return str(self.rating)
@@ -215,7 +215,7 @@ class Category(SIModel):
         return str(f'{self.menu.business.name} - {self.name}')
 
 
-class Products(SIModel):
+class Product(SIModel):
     class Meta:
         verbose_name = 'Produkti'
         verbose_name_plural = 'Produktet'
@@ -228,15 +228,27 @@ class Products(SIModel):
         return str(self.name)
 
 
-class BusinessFeedback(SIModel):
+
+class CategoryRating(SIModel):
     class Meta:
-        verbose_name = 'Vlerësimi për biznesin'
-        verbose_name_plural = 'Vlerësimet për biznesin'
-        db_table = 'si_business_feedback'
+        verbose_name = 'Vlerësimi për kategorinë'
+        verbose_name_plural = 'Vlerësimet për kategorinë'
+        db_table = 'si_category_rating'
 
     rating = models.IntegerField()
-    category_rating = models.ForeignKey(Category, related_name='category_ratings', null=True, blank=True, on_delete=models.CASCADE)
-    product_rating = models.ForeignKey(Products, related_name='product_ratings', null=True, blank=True, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_ratings')
+
+    def __str__(self):
+        return str(self.rating)
+
+class ProductRating(SIModel):
+    class Meta:
+        verbose_name = 'Vlerësimi për produktin'
+        verbose_name_plural = 'Vlerësimet për produktin'
+        db_table = 'si_product_rating'
+
+    rating = models.IntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_ratings')
 
     def __str__(self):
         return str(self.rating)
