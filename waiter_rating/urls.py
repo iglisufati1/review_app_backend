@@ -1,6 +1,7 @@
-from .views import WaiterRatingListCreateAPIView, WaiterRatingRUDAPIView
 from django.urls import path
+
+from .views import WaiterRatingListCreateAPIView
+
 urlpatterns = [
     path('waiter-rating/', WaiterRatingListCreateAPIView.as_view(), name='waiter-rating'),
-    path('waiter-rating/<int:pk>', WaiterRatingRUDAPIView.as_view(), name='waiter-rating-update'),
 ]

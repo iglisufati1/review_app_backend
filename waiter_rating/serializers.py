@@ -31,10 +31,3 @@ class WaiterRatingWriteSerializer(serializers.Serializer):
                 raise serializers.ValidationError('Ju keni arritur limitin e vleresimeve per kete muaj')
         else:
             raise serializers.ValidationError('Ju keni arritur limitin e vleresimeve per sot')
-
-
-    def update(self, instance, validated_data):
-        instance.id = validated_data.get('id', instance.id)
-        instance.rating = validated_data.get('rating', instance.rating)
-        instance.save()
-        return instance
