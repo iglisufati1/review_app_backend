@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 import business.urls as business_urls
 import waiter.urls as waiter_urls
+import waiter_rating.urls as waiter_rating_urls
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -27,3 +28,4 @@ urlpatterns = [
 
 urlpatterns += business_urls.urlpatterns
 urlpatterns += waiter_urls.urlpatterns
+urlpatterns += waiter_rating_urls.urlpatterns

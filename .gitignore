@@ -1,2 +1,4 @@
-# created by virtualenv automatically
-templates
+.idea/
+venv/
+templates/
+db.sqlite3

@@ -12,3 +12,10 @@ class BusinessListCreateAPIView(ReviewAppListCreateAPIView):
     read_serializer_class = BusinessReadSerializer
     # filter_backends = [DjangoFilterBackend, OrderingFilter]
     # filterset_class = BusinessFilterSerializer
+
+class BusinessRUDAPIView(ReviewAppRetrieveUpdateDestroyAPIView):
+    queryset = Business.objects.all()
+    write_serializer_class = BusinessWriteSerializer
+    read_serializer_class = BusinessReadSerializer
+    # filter_backends = [DjangoFilterBackend, OrderingFilter]
+    # filterset_class = BusinessFilterSerializer

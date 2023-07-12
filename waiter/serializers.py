@@ -1,17 +1,10 @@
 from io import BytesIO
-
+from waiter_rating.serializers import WaiterRatingReadSerializer
 import qrcode
 from django.core.files import File
 from django.db.models import Avg
 from model.models import WaiterRating, Waiter
 from rest_framework import serializers
-
-
-class WaiterRatingReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    rating = serializers.IntegerField()
-
-
 class WaiterReadSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     first_name = serializers.CharField()

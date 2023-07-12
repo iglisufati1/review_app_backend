@@ -168,6 +168,7 @@ class WaiterRating(SIModel):
 
     rating = models.PositiveIntegerField('Vlerësimi')
     waiter = models.ForeignKey(Waiter, on_delete=models.CASCADE, related_name='waiter_ratings', null=True, blank=True)
+    client_device = models.CharField(max_length=10, null=True, blank=True)
 
     def __str__(self):
         return str(self.rating)
@@ -211,7 +212,6 @@ class Product(SIModel):
         return str(self.name)
 
 
-
 class CategoryRating(SIModel):
     class Meta:
         verbose_name = 'Vlerësimi për kategorinë'
@@ -223,6 +223,7 @@ class CategoryRating(SIModel):
 
     def __str__(self):
         return str(self.rating)
+
 
 class ProductRating(SIModel):
     class Meta:
