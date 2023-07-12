@@ -158,23 +158,6 @@ class Waiter(SIModel):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
-    def save(self, *args, **kwargs):
-        # Generate QR code and save image
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
-        qr.add_data(f"Waiter ID: {self.id}")
-        qr.make(fit=True)
-
-        qr_image = qr.make_image(fill='black', back_color='white')
-
-        # Create a BytesIO object to save the image
-        qr_image_io = BytesIO()
-        qr_image.save(qr_image_io, format='PNG')
-
-        # Save the image to the qr_code field
-        self.qr_code.save(f'qr_code_{self.first_name}_{self.last_name}_{self.id}.png', File(qr_image_io), save=False)
-
-        super().save(*args, **kwargs)
-
 
 class WaiterRating(SIModel):
     class Meta:

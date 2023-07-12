@@ -101,3 +101,11 @@ class BusinessWriteSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         return Business.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        instance.id = validated_data.get('id', instance.id)
+        instance.name = validated_data.get('name', instance.name)
+        instance.address = validated_data.get('address', instance.address)
+        instance.nipt = validated_data.get('nipt', instance.nipt)
+        instance.save()
+        return instance
