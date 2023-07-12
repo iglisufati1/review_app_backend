@@ -1,14 +1,9 @@
 from common.global_serializers.serializers import UserSerializer
 from django.db.models import Avg
 from model.models import Category, Product, CategoryRating, ProductRating
+from product_rating.serializers import ProductRatingReadSerializer
 from rest_framework import serializers
 from waiter.serializers import WaiterReadSerializer
-
-
-class ProductRatingReadSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    rating = serializers.IntegerField()
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
 
 
 class CategoryRatingSerializer(serializers.Serializer):
